@@ -85,46 +85,27 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // --- AUTOMATIC LINK SHORTENER PLUGIN CODE ---
-      // --- CORS-IMMUNE SHORTENER VIA JSONP (TinyURL) ---
+        fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(gameUrl)}`)
+            .then(response => response.text())
+            .then(shortUrl => {
+                // Update text field with the clean, short link!
+                shareableLinkInput.value = shortUrl;
 
-window.handleTinyUrl = function(data) {
-    if (data && data.data && data.data.tiny_url) {
-        const shortUrl = data.data.tiny_url;
-        shareableLinkInput.value = shortUrl;
-        if (visitBtn) {
-            visitBtn.href = shortUrl;
-            visitBtn.style.display = "inline-block";
-        }
-    } else {
-        useLongUrlFallback();
-    }
-    cleanupJsonpScript();
-};
-
-function cleanupJsonpScript() {
-    const oldScript = document.getElementById("jsonp-shortener-script");
-    if (oldScript) oldScript.remove();
-}
-
-function useLongUrlFallback() {
-    shareableLinkInput.value = gameUrl;
-    if (visitBtn) {
-        visitBtn.href = gameUrl;
-        visitBtn.style.display = "inline-block";
-    }
-}
-
-try {
-    cleanupJsonpScript();
-    const script = document.createElement("script");
-    script.id = "jsonp-shortener-script";
-    // TinyURL supports JSONP via the 'callback' parameter
-    script.src = `https://api.tinyurl.com/create?callback=handleTinyUrl&url=${encodeURIComponent(gameUrl)}`;
-    script.onerror = () => { useLongUrlFallback(); cleanupJsonpScript(); };
-    document.body.appendChild(script);
-} catch (err) {
-    useLongUrlFallback();
-}
+                // Wire up the Visit Button to the short version
+                if (visitBtn) {
+                    visitBtn.href = shortUrl;
+                    visitBtn.style.display = "inline-block";
+                }
+            })
+            .catch(error => {
+                console.error("Shortening failed, falling back to long URL:", error);
+                // Fallback: If network drops or API fails, still give them the working long URL
+                shareableLinkInput.value = gameUrl;
+                if (visitBtn) {
+                    visitBtn.href = gameUrl;
+                    visitBtn.style.display = "inline-block";
+                }
+            });
     }
 
     document.getElementById("copy-btn").addEventListener("click", () => {
