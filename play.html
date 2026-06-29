@@ -36,12 +36,10 @@
             text-align: center;
             z-index: 1; 
             word-break: break-word;
-            /* CRITICAL FIX: Keep hidden until the puzzle is fully completed */
             opacity: 0;
             transition: opacity 1.5s ease-in-out;
         }
 
-        /* Applied via JS when the game is won to fade the message in */
         #secret-message-display.reveal-text {
             opacity: 1 !important;
         }
