@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function createLinkPayload(msg, imgData, pieces) {
         const payload = { msg: msg, img: imgData, count: pieces };
-        const encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+        const encodedData = LZString.compressToEncodedURIComponent(JSON.stringify(payload));
         
         // Dynamic directory resolver that works flawlessly on local host networks and live web deployments
         const currentPath = window.location.pathname;
