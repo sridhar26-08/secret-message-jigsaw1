@@ -91,33 +91,60 @@ document.addEventListener("DOMContentLoaded", () => {
       
         // --- INSTANT DIRECT SHORTENER API (CORS PROXY FIX) ---
      // --- CORS-COMPLIANT SHORTENER API (ULVIS) ---
-        fetch(`https://ulvis.net/api.php?url=${encodeURIComponent(gameUrl)}&private=1`)
-            .then(response => {
-                if (!response.ok) throw new Error("Shortener API rejected request");
-                return response.text();
-            })
-            .then(shortUrl => {
-                // Confirm the response actually contains a valid shortened domain URL
-                if (shortUrl && shortUrl.includes("ulvis.net")) {
-                    shareableLinkInput.value = shortUrl.trim();
-                    if (visitBtn) {
-                        visitBtn.href = shortUrl.trim();
-                        visitBtn.style.display = "inline-block";
-                    }
-                } else {
-                    throw new Error("Invalid URL signature string returned from API");
-                }
-            })
-            .catch(error => {
-                console.error("Shortener failed, falling back to long URL:", error);
-                
-                // Fallback: Show the working long string so the app still functions
-                shareableLinkInput.value = gameUrl;
-                if (visitBtn) {
-                    visitBtn.href = gameUrl;
-                    visitBtn.style.display = "inline-block";
-                }
-            });
+       // --- CORS-IMMUNE SHORTENER VIA JSONP ---
+        
+ 
+
+       // --- CORS-IMMUNE SHORTENER VIA JSONP ---
+
+// 1. Global callback for the API
+
+window.handleShortUrl = function(data) {
+    
+    if (data && data.shorturl) {
+    
+        const shortUrl = data.shorturl;
+      
+        shareableLinkInput.value = shortUrl;
+        if (visitBtn) {
+            visitBtn.href = shortUrl;
+            visitBtn.style.display = "inline-block";
+        }
+    } else {
+        useLongUrlFallback();
+    }
+    cleanupJsonpScript();
+};
+
+function cleanupJsonpScript() {
+    const oldScript = document.getElementById("jsonp-shortener-script");
+    if (oldScript) oldScript.remove();
+}
+
+function useLongUrlFallback() {
+    shareableLinkInput.value = gameUrl;
+    if (visitBtn) {
+        visitBtn.href = gameUrl;
+        visitBtn.style.display = "inline-block";
+    }
+}
+
+try {
+    cleanupJsonpScript();
+    // 2. Inject script tag to bypass CORS
+    const script = document.createElement("script");
+    script.id = "jsonp-shortener-script";
+    // Using v.gd API which supports JSONP callbacks
+    script.src = `https://v.gd/create.php?format=json&callback=handleShortUrl&url=${encodeURIComponent(gameUrl)}`;
+    script.onerror = () => { useLongUrlFallback(); cleanupJsonpScript(); };
+    document.body.appendChild(script);
+
+} catch (err) {
+    useLongUrlFallback();
+
+
+} 
+
     }
 
     document.getElementById("copy-btn").addEventListener("click", () => {
