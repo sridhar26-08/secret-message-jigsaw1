@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function createLinkPayload(msg, imgData, pieces) {
         const payload = { msg: msg, img: imgData, count: pieces };
-        const encodedData = LZString.compressToEncodedURIComponent(JSON.stringify(payload));
+        const encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
         
         // Dynamic directory resolver that works flawlessly on local host networks and live web deployments
         const currentPath = window.location.pathname;
@@ -84,67 +84,30 @@ document.addEventListener("DOMContentLoaded", () => {
             visitBtn.style.display = "none"; // Hide until short link is ready
         }
 
+ // --- INSTANT DIRECT SHORTENER API ---
+        fetch(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(gameUrl)}`)
+            .then(response => {
+                if (!response.ok) throw new Error("Shortener response issue");
+                return response.text();
+            })
+            .then(shortUrl => {
+                // Instantly sets the clean, fast-redirect short link!
+                shareableLinkInput.value = shortUrl.trim();
 
-        // --- INSTANT DIRECT SHORTENER API ---
-
-    
-      
-        // --- INSTANT DIRECT SHORTENER API (CORS PROXY FIX) ---
-     // --- CORS-COMPLIANT SHORTENER API (ULVIS) ---
-       // --- CORS-IMMUNE SHORTENER VIA JSONP ---
-        
- 
-
-       // --- CORS-IMMUNE SHORTENER VIA JSONP ---
-
-// 1. Global callback for the API
-
-window.handleShortUrl = function(data) {
-    
-    if (data && data.shorturl) {
-    
-        const shortUrl = data.shorturl;
-      
-        shareableLinkInput.value = shortUrl;
-        if (visitBtn) {
-            visitBtn.href = shortUrl;
-            visitBtn.style.display = "inline-block";
-        }
-    } else {
-        useLongUrlFallback();
-    }
-    cleanupJsonpScript();
-};
-
-function cleanupJsonpScript() {
-    const oldScript = document.getElementById("jsonp-shortener-script");
-    if (oldScript) oldScript.remove();
-}
-
-function useLongUrlFallback() {
-    shareableLinkInput.value = gameUrl;
-    if (visitBtn) {
-        visitBtn.href = gameUrl;
-        visitBtn.style.display = "inline-block";
-    }
-}
-
-try {
-    cleanupJsonpScript();
-    // 2. Inject script tag to bypass CORS
-    const script = document.createElement("script");
-    script.id = "jsonp-shortener-script";
-    // Using v.gd API which supports JSONP callbacks
-    script.src = `https://v.gd/create.php?format=json&callback=handleShortUrl&url=${encodeURIComponent(gameUrl)}`;
-    script.onerror = () => { useLongUrlFallback(); cleanupJsonpScript(); };
-    document.body.appendChild(script);
-
-} catch (err) {
-    useLongUrlFallback();
-
-
-} 
-
+                if (visitBtn) {
+                    visitBtn.href = shortUrl.trim();
+                    visitBtn.style.display = "inline-block";
+                }
+            })
+            .catch(error => {
+                console.error("Shortener failed, smoothly falling back to raw URL:", error);
+                // Fallback protection so your app never breaks
+                shareableLinkInput.value = gameUrl;
+                if (visitBtn) {
+                    visitBtn.href = gameUrl;
+                    visitBtn.style.display = "inline-block";
+                }
+            });
     }
 
     document.getElementById("copy-btn").addEventListener("click", () => {
