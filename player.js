@@ -29,8 +29,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function initializePuzzleCanvas(puzzleImage, pieceCount) {
-        const cw = 600; const ch = 450;
-        
+        // Read the ACTUAL rendered size of the puzzle box (responsive via CSS)
+        // instead of a hardcoded 600x450, so the canvas always matches the
+        // screen it's on (desktop or mobile).
+        const stageWrapper = document.querySelector('.stage-wrapper');
+        const cw = stageWrapper.clientWidth;
+        const ch = stageWrapper.clientHeight;
+
         const stage = new Konva.Stage({ container: 'canvas-container', width: cw, height: ch });
         const pieceLayer = new Konva.Layer();
         stage.add(pieceLayer);
