@@ -166,3 +166,83 @@ input:checked + .toggle-slider-button:before {
     transform: translateX(20px);
 }
 
+/* ===== MOBILE RESPONSIVE FIXES ===== */
+
+/* Game canvas: scale instead of hardcoded 600x450 on all screen sizes */
+.game-container,
+.stage-wrapper {
+    width: 100%;
+    max-width: 600px;
+    aspect-ratio: 4 / 3;
+    height: auto;
+}
+
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+    }
+
+    .sidebar-ad {
+        width: 100%;
+        min-height: 60px;
+        border-left: none;
+        border-right: none;
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+        order: 2; /* push ads below content on mobile */
+    }
+
+    .main-content {
+        padding: 20px 16px;
+        max-width: 100%;
+        order: 1;
+    }
+
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    .subtitle {
+        font-size: 0.95rem;
+    }
+
+    .form-card, .game-wrapper {
+        padding: 18px;
+    }
+
+    .preset-grid {
+        flex-direction: column;
+    }
+
+    .control-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .secondary-btn, .nav-btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .theme-toggle-container {
+        top: 8px;
+        right: 8px;
+        padding: 4px 8px;
+    }
+
+    .theme-label-text {
+        display: none; /* save space, keep just the toggle on small screens */
+    }
+}
+
+@media (max-width: 480px) {
+    .copy-input-group {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+
+    #copy-btn, #visit-btn {
+        width: 100%;
+        text-align: center;
+    }
+}
