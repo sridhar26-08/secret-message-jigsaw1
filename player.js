@@ -29,19 +29,50 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function initializePuzzleCanvas(puzzleImage, pieceCount) {
-        // Read the ACTUAL rendered size of the puzzle box (responsive via CSS)
-        // instead of a hardcoded 600x450, so the canvas always matches the
-        // screen it's on (desktop or mobile).
         const stageWrapper = document.querySelector('.stage-wrapper');
-        const cw = stageWrapper.clientWidth;
-        const ch = stageWrapper.clientHeight;
 
-        const stage = new Konva.Stage({ container: 'canvas-container', width: cw, height: ch });
-        const pieceLayer = new Konva.Layer();
-        stage.add(pieceLayer);
+        // BOARD: the target area where the final image assembles. Its width
+        // tracks the actual rendered width of the wrapper (responsive),
+        // height keeps a 4:3 ratio relative to that width.
+        const boardW = stageWrapper.clientWidth;
+        const boardH = boardW * 0.75;
 
         const grid = calculateGrid(pieceCount);
-        const pw = cw / grid.cols; const ph = ch / grid.rows;
+        const pw = boardW / grid.cols;
+        const ph = boardH / grid.rows;
+
+        // TRAY: scattered-piece staging area BELOW the board. Layout (how
+        // many columns of slots) adapts to the actual width available, so
+        // phones get a narrower/taller tray and desktops get a wider one.
+        const totalPieces = grid.rows * grid.cols;
+        const traySlotCols = Math.max(3, Math.floor(boardW / (pw * 1.3)));
+        const traySlotRows = Math.ceil(totalPieces / traySlotCols);
+        const traySlotW = boardW / traySlotCols;
+        const traySlotH = ph * 1.15;
+        const trayH = traySlotRows * traySlotH + ph * 0.5;
+
+        const gap = Math.max(10, boardW * 0.02); // breathing room between board and tray
+        const cw = boardW;
+        const ch = boardH + gap + trayH;
+
+        // Set the wrapper's actual pixel height to match the computed
+        // board+tray stage, since height can no longer be a fixed CSS ratio.
+        stageWrapper.style.height = ch + "px";
+
+        const stage = new Konva.Stage({ container: 'canvas-container', width: cw, height: ch });
+
+        const boardLayer = new Konva.Layer();
+        const pieceLayer = new Konva.Layer();
+        stage.add(boardLayer);
+        stage.add(pieceLayer);
+
+        // Faint dashed outline showing where the board sits, so players see
+        // the target zone they're assembling the picture into.
+        boardLayer.add(new Konva.Rect({
+            x: 0, y: 0, width: boardW, height: boardH,
+            stroke: '#475569', strokeWidth: 2, dash: [6, 6]
+        }));
+        boardLayer.draw();
 
         const verticalEdges = Array.from({ length: grid.rows }, () => Array(grid.cols + 1).fill(0));
         for (let r = 0; r < grid.rows; r++) {
@@ -57,6 +88,25 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
+        // Evenly-spaced, shuffled starting slots within the tray so pieces
+        // don't pile on top of each other, on any screen width.
+        const traySlots = [];
+        for (let i = 0; i < totalPieces; i++) {
+            const slotCol = i % traySlotCols;
+            const slotRow = Math.floor(i / traySlotCols);
+            traySlots.push({
+                x: slotCol * traySlotW + (traySlotW - pw) / 2 + (Math.random() * 10 - 5),
+                y: boardH + gap + slotRow * traySlotH + (Math.random() * 10 - 5)
+            });
+        }
+        // Shuffle so the tray doesn't read left-to-right in solve order
+        for (let i = traySlots.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [traySlots[i], traySlots[j]] = [traySlots[j], traySlots[i]];
+        }
+
+        let slotIndex = 0;
+
         for (let r = 0; r < grid.rows; r++) {
             for (let c = 0; c < grid.cols; c++) {
                 
@@ -65,9 +115,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 const bottomType = horizontalEdges[r + 1][c];
                 const leftType = verticalEdges[r][c];
 
+                const startPos = traySlots[slotIndex++];
+
                 const piece = new Konva.Shape({
-                    x: Math.random() * (cw - pw),
-                    y: Math.random() * (ch - ph),
+                    x: Math.max(0, Math.min(cw - pw, startPos.x)),
+                    y: Math.max(boardH + gap * 0.5, Math.min(ch - ph, startPos.y)),
                     width: pw,
                     height: ph,
                     draggable: true,
@@ -101,12 +153,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
                 piece.fillPatternImage(puzzleImage);
-                piece.fillPatternScale({ x: cw / puzzleImage.width, y: ch / puzzleImage.height });
+                piece.fillPatternScale({ x: boardW / puzzleImage.width, y: boardH / puzzleImage.height });
                 
-                const scaleX = puzzleImage.width / cw;
-                const scaleY = puzzleImage.height / ch;
+                const scaleX = puzzleImage.width / boardW;
+                const scaleY = puzzleImage.height / boardH;
                 piece.fillPatternOffset({ x: c * pw * scaleX, y: r * ph * scaleY });
 
+                // Target = the piece's correct slot inside the BOARD (top area)
                 const tx = c * pw; const ty = r * ph;
 
                 piece.on('dragend', () => {

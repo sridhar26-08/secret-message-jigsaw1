@@ -168,13 +168,13 @@ input:checked + .toggle-slider-button:before {
 
 /* ===== MOBILE RESPONSIVE FIXES ===== */
 
-/* Game canvas: scale instead of hardcoded 600x450 on all screen sizes */
+/* Game canvas: width scales responsively; height is now set dynamically
+   by player.js to fit the board (top) + scattered piece tray (bottom). */
 .game-container,
 .stage-wrapper {
     width: 100%;
     max-width: 600px;
-    aspect-ratio: 4 / 3;
-    height: auto;
+    height: auto; /* overridden inline by JS once board+tray size is known */
 }
 
 @media (max-width: 768px) {
